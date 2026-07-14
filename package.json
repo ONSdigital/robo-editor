@@ -8,11 +8,11 @@
     "build": "rollup -c",
     "dev": "rollup -c -w",
     "start": "sirv public --no-clear",
-    "deploy": "gh-pages -d public -t true"
+    "deploy": "gh-pages -d public -t"
   },
   "devDependencies": {
-    "@onsvisual/robo-utils": "^0.3.2",
-    "@onsvisual/svelte-charts": "^0.3.13",
+    "@onsvisual/robo-utils": "^0.4.0",
+    "@onsvisual/svelte-charts": "^0.4.11",
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
@@ -21,7 +21,7 @@
     "d3-dsv": "latest",
     "d3-format": "latest",
     "debounce": "^1.2.1",
-    "gh-pages": "^5.0.0",
+    "gh-pages": "^6.3.0",
     "highlight.js": "^11.7.0",
     "jszip": "^3.10.1",
     "node-html-markdown": "^1.3.0",
