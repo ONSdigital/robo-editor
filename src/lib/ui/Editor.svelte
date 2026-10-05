@@ -1,9 +1,14 @@
 <script>
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount } from "svelte";
+	// The "noconflict" build keeps Ace's module loader under window.ace (not a global require/define)
+	import ace from "ace-builds/src-noconflict/ace";
+	import "ace-builds/src-noconflict/mode-jade";
+	import "ace-builds/src-noconflict/theme-monokai";
 	const dispatch = createEventDispatcher();
 
 	export let editor = null;
 	export let content = "";
+	// Other themes and modes must also be imported above
 	export let theme = "monokai";
 	export let mode = "jade";
 	export function setContent(content) {
@@ -12,7 +17,6 @@
 	export let width;
 
 	function initEditor() {
-		ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/");
 		editor = ace.edit("editor");
 		editor.setTheme(`ace/theme/${theme}`);
 		editor.setShowPrintMargin(false);
@@ -33,19 +37,14 @@
 		});
 	}
 
+	onMount(initEditor);
+
 	let w;
 	function resize(w) {
 		if (editor) editor.resize();
 	}
 	$: resize(width);
 </script>
-
-<svelte:head>
-	<script
-		src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/ace.min.js"
-		on:load={initEditor}
-	></script>
-</svelte:head>
 
 <div id="editor"></div>
 

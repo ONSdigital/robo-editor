@@ -1,11 +1,12 @@
 <script>
 	import { onMount, mount, unmount, flushSync } from "svelte";
 	import { asset } from "$app/paths";
+	import pug from "$lib/pug/index.js";
 	import { MagicArray, csvParse, renderJSON, ascending } from "@onsvisual/robo-utils";
 	import debounce from "debounce";
 	import JSZip from "jszip";
 	import { NodeHtmlMarkdown } from "node-html-markdown";
-	import computedStyleToInlineStyle from "computed-style-to-inline-style";
+	import { markdownToRtf } from "./rtf.js";
 	import { download, sleep, getColKeys, setStorage, getStorage, deleteStorage } from "./utils";
 	import { HSplitPane } from "svelte-split-pane";
 	import Editor from "./ui/Editor.svelte";
@@ -21,7 +22,7 @@
 	window.process = process;
 
 	// DOM BINDINGS ETC
-	let pug, htmlToRtf, editor, pug_upload, csv_upload;
+	let editor, pug_upload, csv_upload;
 
 	// STATE/DATA
 	let template = "";
@@ -160,20 +161,9 @@
 						props: { plaintext: true, output }
 					});
 					flushSync();
-					let renderedOutput;
-					if (mode === "md") {
-						renderedOutput = nhm.translate(offScreen.innerHTML);
-					} else {
-						computedStyleToInlineStyle(offScreen, {
-							recursive: true,
-							properties: ["font-size", "color"]
-						});
-						const html = offScreen.innerHTML
-							.replace(/\n/g, "")
-							.replace(/\d+(?:.\d+)?(?=px)/g, (val) => +val * 2);
-						renderedOutput = htmlToRtf(html);
-					}
-					out.file(filename, renderedOutput);
+					// RTF is generated from the same markdown as the MD export (see src/lib/rtf.js)
+					const markdown = nhm.translate(offScreen.innerHTML);
+					out.file(filename, mode === "md" ? markdown : markdownToRtf(markdown));
 					unmount(component);
 					offScreen.innerHTML = "";
 				} else {
@@ -258,14 +248,6 @@
 </script>
 
 <svelte:head>
-	<script
-		src="https://pugjs.org/js/pug.js"
-		on:load={() => (pug = window.require("pug"))}
-	></script>
-	<script
-		src="https://www.unpkg.com/html-to-rtf@2.1.0/app/browser/bundle.js"
-		on:load={() => (htmlToRtf = window.htmlToRtf)}
-	></script>
 	{#if plaintext}
 		<style>
 			mark {
