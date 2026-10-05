@@ -257,7 +257,6 @@
 		src="https://www.unpkg.com/html-to-rtf@2.1.0/app/browser/bundle.js"
 		on:load={() => (htmlToRtf = window.htmlToRtf)}
 	></script>
-	/node_modules/html-to-rtf/app/browser/bundle.js
 	{#if plaintext}
 		<style>
 			mark {
