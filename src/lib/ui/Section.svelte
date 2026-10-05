@@ -1,5 +1,6 @@
 <script>
 	import { Chart } from "@onsvisual/svelte-charts";
+	import Section from "./Section.svelte";
 
 	export let section;
 	export let plaintext = false;
@@ -28,7 +29,7 @@
 		{@html section.content ? section.content : ""}
 		{#if section.sections}
 			{#each section.sections as subsec}
-				<svelte:self section={subsec} {plaintext} />
+				<Section section={subsec} {plaintext} />
 			{/each}
 		{/if}
 	{/if}

@@ -6,5 +6,5 @@ bun.lock
 bun.lockb
 
 # Bundled code
-/public/build
+/build
 .svelte-kit/

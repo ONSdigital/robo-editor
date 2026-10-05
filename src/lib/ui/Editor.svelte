@@ -47,7 +47,7 @@
 	></script>
 </svelte:head>
 
-<div id="editor" />
+<div id="editor"></div>
 
 <style>
 	#editor {

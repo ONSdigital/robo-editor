@@ -1,5 +1,6 @@
 <script>
-	import { onMount } from "svelte";
+	import { onMount, mount, unmount, flushSync } from "svelte";
+	import { asset } from "$app/paths";
 	import { MagicArray, csvParse, renderJSON, ascending } from "@onsvisual/robo-utils";
 	import debounce from "debounce";
 	import JSZip from "jszip";
@@ -154,7 +155,11 @@
 			if (!output.error) {
 				const filename = `${plcs[i] ? `${plcs[i][keys.id]}_${plcs[i][keys.label]}` : "Default"}.${mode}`;
 				if (mode === "md" || mode === "rtf") {
-					new Output({ target: offScreen, props: { plaintext: true, output } });
+					const component = mount(Output, {
+						target: offScreen,
+						props: { plaintext: true, output }
+					});
+					flushSync();
 					let renderedOutput;
 					if (mode === "md") {
 						renderedOutput = nhm.translate(offScreen.innerHTML);
@@ -169,6 +174,7 @@
 						renderedOutput = htmlToRtf(html);
 					}
 					out.file(filename, renderedOutput);
+					unmount(component);
 					offScreen.innerHTML = "";
 				} else {
 					out.file(filename, JSON.stringify(output));
@@ -186,22 +192,22 @@
 		places = null;
 		lookup = null;
 		place = null;
-		getPUG("./data/intro.pug");
+		getPUG(asset("/data/intro.pug"));
 	}
 
 	async function embedDemo() {
-		getCSV("./data/data_v2.csv");
-		getPUG("./data/template_embed.pug");
+		getCSV(asset("/data/data_v2.csv"));
+		getPUG(asset("/data/template_embed.pug"));
 	}
 
 	async function scrollyDemo() {
-		getCSV("./data/data.csv");
-		getPUG("./data/template.pug");
+		getCSV(asset("/data/data.csv"));
+		getPUG(asset("/data/template.pug"));
 	}
 
 	async function nlgDemo() {
-		getCSV("./data/data.csv");
-		getPUG("./data/template_nlg.pug");
+		getCSV(asset("/data/data.csv"));
+		getPUG(asset("/data/template_nlg.pug"));
 	}
 
 	async function getCSV(url) {
@@ -238,8 +244,11 @@
 		}
 		let store = getStorage("robo-store");
 		if (!pug && store) {
-			data_raw = store.data_raw;
-			makeData(data_raw, store.keys, store.filter);
+			// A template without a CSV (eg. the intro page) is saved without data
+			if (store.data_raw) {
+				data_raw = store.data_raw;
+				makeData(data_raw, store.keys, store.filter);
+			}
 			template = store.template;
 			editor.setContent(template);
 		} else if (!pug) {
@@ -291,14 +300,14 @@
 	<nav>
 		{#if progress}
 			<div class="progress-container">
-				<div class="progress-bar" style:width="{(progress * 100).toFixed(0)}%" />
+				<div class="progress-bar" style:width="{(progress * 100).toFixed(0)}%"></div>
 			</div>
 		{/if}
 		<div>
 			<button title="Close PUG and CSV (return to intro)" on:click={loadIntro}
 				><Icon type="trash" /></button
 			>
-			<div class="v-divider" />
+			<div class="v-divider"></div>
 			<span>PUG</span>
 			<button title="Load PUG" on:click={clickPUG}
 				><Icon type="load" margin /><span>Load</span></button
@@ -323,7 +332,7 @@
 				bind:this={csv_upload}
 				on:change={loadCSV}
 			/>
-			<div class="v-divider" />
+			<div class="v-divider"></div>
 			<span>CSV</span>
 			<button title="Load CSV" on:click={clickCSV}
 				><Icon type="load" margin /><span>Load</span></button
@@ -349,7 +358,7 @@
 				title="Filter CSV by ID"
 				on:click={() => (modal_filter = true)}><Icon type="filter" /></button
 			>
-			<div class="v-divider" />
+			<div class="v-divider"></div>
 			<span>Output</span>
 			<button title="Save as RTF" on:click={() => saveOutput("rtf")}
 				><Icon type="save" margin /><span>RTF</span></button
@@ -374,7 +383,7 @@
 	<div class="content">
 		<HSplitPane>
 			<left slot="left">
-				<div bind:clientWidth={w} />
+				<div bind:clientWidth={w}></div>
 				<Editor bind:content={template} bind:this={editor} width={w} />
 			</left>
 			<right slot="right">
@@ -434,7 +443,7 @@
 	<Help />
 </Modal>
 
-<div style:display="none" bind:this={offScreen} />
+<div style:display="none" bind:this={offScreen}></div>
 
 <style>
 	:global(*) {
