@@ -21,19 +21,3 @@ export function getColKeys(columns) {
 	const row = Object.fromEntries(columns.map((col) => [col, null]));
 	return { id: getCodeKey(row), label: getNameKey(row) };
 }
-
-export function setStorage(name, value) {
-	let val = JSON.stringify(value);
-	localStorage.setItem(name, val);
-}
-
-export function getStorage(name) {
-	if (localStorage.getItem(name)) {
-		return JSON.parse(localStorage.getItem(name));
-	}
-	return null;
-}
-
-export function deleteStorage(name) {
-	localStorage.removeItem(name);
-}

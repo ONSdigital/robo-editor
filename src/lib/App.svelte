@@ -7,7 +7,10 @@
 	import JSZip from "jszip";
 	import { NodeHtmlMarkdown } from "node-html-markdown";
 	import { markdownToRtf } from "./rtf.js";
-	import { download, sleep, getColKeys, setStorage, getStorage, deleteStorage } from "./utils";
+	import { get } from "svelte/store";
+	import { download, sleep, getColKeys } from "./utils";
+	import { appVersion } from "./config.js";
+	import { getAppState, getStoredAppVersion, setStoredAppVersion } from "./util/state";
 	import { HSplitPane } from "svelte-split-pane";
 	import Editor from "./ui/Editor.svelte";
 	import Icon from "./ui/Icon.svelte";
@@ -36,9 +39,12 @@
 	// BINDINGS
 	let offScreen;
 
+	// Synced stores for state kept across sessions (see src/lib/util/state/)
+	let appState;
+
 	const render = debounce(() => {
 		output = renderJSON(template, place, places, lookup, pug);
-		setStorage("robo-store", { data_raw, template, filter, keys });
+		if (appState && template !== get(appState.template)) appState.template.set(template);
 	}, 500);
 	$: if (pug && template) render(template, place, places, lookup);
 	$: console.log(output);
@@ -105,9 +111,11 @@
 			places = filterData(data, keys, filter);
 			place = places[0];
 			lookup = newlookup;
+			saveData();
 		} catch (err) {
 			const msg = "Failed to load data. Please refresh page.";
-			deleteStorage("robo-store");
+			// Forget the data that failed to load (the template is kept)
+			for (const key of ["dataRaw", "keys", "filter"]) appState?.[key].set(null);
 			console.error(msg, err);
 			alert(msg);
 		}
@@ -182,6 +190,9 @@
 		places = null;
 		lookup = null;
 		place = null;
+		// Close the CSV too, so it isn't restored with the intro next time
+		data_raw = null;
+		for (const key of ["dataRaw", "keys", "filter"]) appState?.[key].set(null);
 		getPUG(asset("/data/intro.pug"));
 	}
 
@@ -216,32 +227,42 @@
 		editor.setContent(template);
 	}
 
-	onMount(() => {
+	// Save the CSV, column keys and filter (whenever any of them change)
+	function saveData() {
+		if (!appState) return;
+		if (data_raw !== get(appState.dataRaw)) appState.dataRaw.set(data_raw);
+		appState.keys.set(keys);
+		appState.filter.set(filter);
+	}
+
+	onMount(async () => {
 		window.embedDemo = embedDemo;
 		window.scrollyDemo = scrollyDemo;
 		window.nlgDemo = nlgDemo;
 
+		const storedAppVersion = await getStoredAppVersion();
+		appState = await getAppState(storedAppVersion);
+		if (appVersion !== storedAppVersion) await setStoredAppVersion();
+
 		let params = new URL(document.location).searchParams;
-		let pug;
+		let pugParam = false;
 		for (const [key, url] of params) {
 			console.log(key, url);
 			if (key == "csv") {
 				getCSV(url);
 			} else if (key == "pug") {
-				pug = true;
+				pugParam = true;
 				getPUG(url);
 			}
 		}
-		let store = getStorage("robo-store");
-		if (!pug && store) {
+		const savedTemplate = get(appState.template);
+		if (!pugParam && savedTemplate) {
 			// A template without a CSV (eg. the intro page) is saved without data
-			if (store.data_raw) {
-				data_raw = store.data_raw;
-				makeData(data_raw, store.keys, store.filter);
-			}
-			template = store.template;
+			const savedData = get(appState.dataRaw);
+			if (savedData) makeData(savedData, get(appState.keys), get(appState.filter));
+			template = savedTemplate;
 			editor.setContent(template);
-		} else if (!pug) {
+		} else if (!pugParam) {
 			loadIntro();
 		}
 	});
@@ -413,6 +434,7 @@
 				on:change={() => {
 					places = filterData(data, keys, filter);
 					place = place = places[0];
+					saveData();
 				}}
 			/>
 			{id}
