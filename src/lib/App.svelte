@@ -34,7 +34,7 @@
 	let progress = 0;
 
 	// BINDINGS
-	let w, offScreen;
+	let offScreen;
 
 	const render = debounce(() => {
 		output = renderJSON(template, place, places, lookup, pug);
@@ -365,8 +365,7 @@
 	<div class="content">
 		<HSplitPane>
 			<left slot="left">
-				<div bind:clientWidth={w}></div>
-				<Editor bind:content={template} bind:this={editor} width={w} />
+				<Editor bind:content={template} bind:this={editor} />
 			</left>
 			<right slot="right">
 				<div class="preview">

@@ -1,58 +1,60 @@
 <script>
-	import { createEventDispatcher, onMount } from "svelte";
-	// The "noconflict" build keeps Ace's module loader under window.ace (not a global require/define)
-	import ace from "ace-builds/src-noconflict/ace";
-	import "ace-builds/src-noconflict/mode-jade";
-	import "ace-builds/src-noconflict/theme-monokai";
+	import { createEventDispatcher, onDestroy, onMount } from "svelte";
+	import { basicSetup } from "codemirror";
+	import { EditorView, keymap } from "@codemirror/view";
+	import { EditorState } from "@codemirror/state";
+	import { indentUnit } from "@codemirror/language";
+	import { indentWithTab } from "@codemirror/commands";
+	import { pugLanguage } from "./pug-language.js";
+	import { monokai } from "./monokai.js";
 	const dispatch = createEventDispatcher();
 
-	export let editor = null;
 	export let content = "";
-	// Other themes and modes must also be imported above
-	export let theme = "monokai";
-	export let mode = "jade";
-	export function setContent(content) {
-		editor ? editor.session.setValue(content, -1) : null;
-	}
-	export let width;
 
-	function initEditor() {
-		editor = ace.edit("editor");
-		editor.setTheme(`ace/theme/${theme}`);
-		editor.setShowPrintMargin(false);
-		editor.getSession().setUseWrapMode(true);
-		editor.session.setOptions({
-			mode: `ace/mode/${mode}`,
-			tabSize: 4,
-			useSoftTabs: true
-		});
+	let element;
+	let view;
 
-		setContent(content);
-
-		editor.session.on("change", function (delta) {
-			content = editor.getValue();
-			dispatch("change", {
-				content
-			});
+	// Replace the whole document (eg. when a template is loaded), with the cursor at the start
+	export function setContent(text) {
+		view?.dispatch({
+			changes: { from: 0, to: view.state.doc.length, insert: text ?? "" },
+			selection: { anchor: 0 },
+			effects: EditorView.scrollIntoView(0)
 		});
 	}
 
-	onMount(initEditor);
+	onMount(() => {
+		view = new EditorView({
+			parent: element,
+			state: EditorState.create({
+				doc: content,
+				extensions: [
+					basicSetup,
+					// Tab indents, like Ace (press Escape then Tab to move focus out of the editor)
+					keymap.of([indentWithTab]),
+					pugLanguage,
+					EditorState.tabSize.of(4),
+					indentUnit.of("    "),
+					EditorView.lineWrapping,
+					monokai,
+					EditorView.updateListener.of((update) => {
+						if (!update.docChanged) return;
+						content = update.state.doc.toString();
+						dispatch("change", { content });
+					})
+				]
+			})
+		});
+	});
 
-	let w;
-	function resize(w) {
-		if (editor) editor.resize();
-	}
-	$: resize(width);
+	onDestroy(() => view?.destroy());
 </script>
 
-<div id="editor"></div>
+<div class="editor" bind:this={element}></div>
 
 <style>
-	#editor {
+	.editor {
 		position: relative;
-		padding: 0;
-		margin: 0;
 		width: 100%;
 		height: 100%;
 	}
