@@ -1,8 +1,7 @@
 <script>
 	import Section from "./Section.svelte";
 
-	export let output;
-	export let plaintext = false;
+	let { output, plaintext = false } = $props();
 </script>
 
 {#if output}

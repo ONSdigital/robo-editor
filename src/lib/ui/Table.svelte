@@ -1,7 +1,7 @@
 <script>
-	export let data;
+	let { data } = $props();
 
-	$: cols = data ? Object.keys(data[0]) : [];
+	let cols = $derived(data ? Object.keys(data[0]) : []);
 </script>
 
 {#if data}
@@ -38,9 +38,6 @@
 	}
 	th {
 		text-align: left;
-	}
-	.right {
-		text-align: right;
 	}
 	td + td,
 	th + th {

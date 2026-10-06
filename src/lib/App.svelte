@@ -25,19 +25,32 @@
 	window.process = process;
 
 	// DOM BINDINGS ETC
-	let editor, pug_upload, csv_upload;
+	let editor = $state(),
+		pug_upload = $state(),
+		csv_upload = $state();
 
 	// STATE/DATA
-	let template = "";
-	let output, data_raw, data, lookup, places, place, cols, keys, ids, filter;
-	let plaintext = false;
-	let modal_data = false;
-	let modal_help = false;
-	let modal_filter = false;
-	let progress = 0;
+	let template = $state("");
+	// Large or non-plain data is kept as raw (not deeply reactive) state
+	let output = $state.raw(),
+		data_raw = $state.raw(),
+		data = $state.raw(),
+		lookup = $state.raw();
+	let places = $state.raw(),
+		place = $state.raw(),
+		cols = $state.raw(),
+		ids = $state.raw();
+	// keys and filter are bound to form fields in the filter modal, so they're deeply reactive
+	let keys = $state(),
+		filter = $state();
+	let plaintext = $state(false);
+	let modal_data = $state(false);
+	let modal_help = $state(false);
+	let modal_filter = $state(false);
+	let progress = $state(0);
 
 	// BINDINGS
-	let offScreen;
+	let offScreen = $state();
 
 	// Synced stores for state kept across sessions (see src/lib/util/state/)
 	let appState;
@@ -46,8 +59,10 @@
 		output = renderJSON(template, place, places, lookup, pug);
 		if (appState && template !== get(appState.template)) appState.template.set(template);
 	}, 500);
-	$: if (pug && template) render(template, place, places, lookup);
-	$: console.log(output);
+	$effect(() => {
+		if (pug && template) render(template, place, places, lookup);
+	});
+	$inspect(output);
 
 	function clickPUG() {
 		pug_upload.click();
@@ -93,7 +108,7 @@
 			ids = Array.from(new Set(newdata.map((d) => `${d[keys.id]}`.slice(0, 3)))).sort(
 				ascending
 			);
-			console.log(keys, ids);
+			console.log($state.snapshot(keys), ids);
 			filter = _filter
 				? _filter
 				: filter_default.some((f) => ids.includes(f))
@@ -307,18 +322,18 @@
 			</div>
 		{/if}
 		<div>
-			<button title="Close PUG and CSV (return to intro)" on:click={loadIntro}
+			<button title="Close PUG and CSV (return to intro)" onclick={loadIntro}
 				><Icon type="trash" /></button
 			>
 			<div class="v-divider"></div>
 			<span>PUG</span>
-			<button title="Load PUG" on:click={clickPUG}
+			<button title="Load PUG" onclick={clickPUG}
 				><Icon type="load" margin /><span>Load</span></button
 			>
-			<button title="Validate PUG" on:click={validatePUG}
+			<button title="Validate PUG" onclick={validatePUG}
 				><Icon type="validate" margin /><span>Validate</span></button
 			>
-			<button title="Save PUG" on:click={savePUG}
+			<button title="Save PUG" onclick={savePUG}
 				><Icon type="save" margin /><span>Save</span></button
 			>
 			<input
@@ -326,18 +341,18 @@
 				accept=".pug"
 				style="display:none"
 				bind:this={pug_upload}
-				on:change={loadPUG}
+				onchange={loadPUG}
 			/>
 			<input
 				type="file"
 				accept=".csv"
 				style="display:none"
 				bind:this={csv_upload}
-				on:change={loadCSV}
+				onchange={loadCSV}
 			/>
 			<div class="v-divider"></div>
 			<span>CSV</span>
-			<button title="Load CSV" on:click={clickCSV}
+			<button title="Load CSV" onclick={clickCSV}
 				><Icon type="load" margin /><span>Load</span></button
 			>
 			<select bind:value={place} disabled={!places}>
@@ -354,22 +369,22 @@
 				style:margin-right="0"
 				disabled={!places}
 				title="Show CSV as table"
-				on:click={() => (modal_data = true)}><Icon type="table" /></button
+				onclick={() => (modal_data = true)}><Icon type="table" /></button
 			>
 			<button
 				disabled={!places}
 				title="Filter CSV by ID"
-				on:click={() => (modal_filter = true)}><Icon type="filter" /></button
+				onclick={() => (modal_filter = true)}><Icon type="filter" /></button
 			>
 			<div class="v-divider"></div>
 			<span>Output</span>
-			<button title="Save as RTF" on:click={() => saveOutput("rtf")}
+			<button title="Save as RTF" onclick={() => saveOutput("rtf")}
 				><Icon type="save" margin /><span>RTF</span></button
 			>
-			<button title="Save as Markdown" on:click={() => saveOutput("md")}
+			<button title="Save as Markdown" onclick={() => saveOutput("md")}
 				><Icon type="save" margin /><span>MD</span></button
 			>
-			<button title="Save as JSON" on:click={() => saveOutput("json")}
+			<button title="Save as JSON" onclick={() => saveOutput("json")}
 				><Icon type="save" margin /><span>JSON</span></button
 			>
 			<label>
@@ -378,21 +393,25 @@
 			</label>
 		</div>
 		<div>
-			<button class="right" title="Show help" on:click={() => (modal_help = true)}
+			<button class="right" title="Show help" onclick={() => (modal_help = true)}
 				><Icon type="info" /></button
 			>
 		</div>
 	</nav>
 	<div class="content">
 		<HSplitPane>
-			<left slot="left">
-				<Editor bind:content={template} bind:this={editor} />
-			</left>
-			<right slot="right">
-				<div class="preview">
-					<Output {output} {plaintext} />
-				</div>
-			</right>
+			{#snippet left()}
+				<left>
+					<Editor bind:content={template} bind:this={editor} />
+				</left>
+			{/snippet}
+			{#snippet right()}
+				<right>
+					<div class="preview">
+						<Output {output} {plaintext} />
+					</div>
+				</right>
+			{/snippet}
 		</HSplitPane>
 	</div>
 </main>
@@ -405,7 +424,7 @@
 	<p>Select <strong>id</strong> and <strong>label</strong> columns in dataset.</p>
 	<label class="checkbox-label">
 		id:<br />
-		<select bind:value={keys.id} on:change={() => makeData(data_raw, keys)}>
+		<select bind:value={keys.id} onchange={() => makeData(data_raw, keys)}>
 			{#each cols as col}
 				<option value={col}>{col}</option>
 			{/each}
@@ -413,7 +432,7 @@
 	</label>
 	<label class="checkbox-label">
 		label:<br />
-		<select bind:value={keys.label} on:change={() => makeData(data_raw, keys)}>
+		<select bind:value={keys.label} onchange={() => makeData(data_raw, keys)}>
 			{#each cols as col}
 				<option value={col}>{col}</option>
 			{/each}
@@ -431,7 +450,7 @@
 				name="filter"
 				bind:group={filter}
 				value={id}
-				on:change={() => {
+				onchange={() => {
 					places = filterData(data, keys, filter);
 					place = place = places[0];
 					saveData();
@@ -558,10 +577,6 @@
 	left,
 	right {
 		position: relative;
-	}
-	left > div {
-		position: absolute;
-		width: 100%;
 	}
 	.preview {
 		padding: 10px;

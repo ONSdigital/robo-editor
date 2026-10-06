@@ -1,7 +1,7 @@
 <script>
 	import hljs from "highlight.js";
 
-	export let code = "";
+	let { code = "" } = $props();
 </script>
 
 <div class="code-example">

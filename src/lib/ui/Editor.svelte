@@ -1,5 +1,5 @@
 <script>
-	import { createEventDispatcher, onDestroy, onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 	import { basicSetup } from "codemirror";
 	import { EditorView, keymap } from "@codemirror/view";
 	import { EditorState } from "@codemirror/state";
@@ -7,11 +7,10 @@
 	import { indentWithTab } from "@codemirror/commands";
 	import { pugLanguage } from "./pug-language.js";
 	import { monokai } from "./monokai.js";
-	const dispatch = createEventDispatcher();
 
-	export let content = "";
+	let { content = $bindable("") } = $props();
 
-	let element;
+	let element = $state();
 	let view;
 
 	// Replace the whole document (eg. when a template is loaded), with the cursor at the start
@@ -40,7 +39,6 @@
 					EditorView.updateListener.of((update) => {
 						if (!update.docChanged) return;
 						content = update.state.doc.toString();
-						dispatch("change", { content });
 					})
 				]
 			})

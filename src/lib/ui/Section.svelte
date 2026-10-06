@@ -2,9 +2,7 @@
 	import { Chart } from "@onsvisual/svelte-charts";
 	import Section from "./Section.svelte";
 
-	export let section;
-	export let plaintext = false;
-	export let single = false;
+	let { section, plaintext = false, single = false } = $props();
 </script>
 
 <section id={section?.id} style:border-top={single ? "none" : null}>

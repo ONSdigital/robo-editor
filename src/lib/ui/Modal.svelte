@@ -1,17 +1,16 @@
 <script>
 	import Icon from "./Icon.svelte";
 
-	export let title = " ";
-	export let open = true;
+	let { title = " ", open = $bindable(true), children } = $props();
 </script>
 
 {#if open}
 	<div class="modal" role="dialog" tabindex="-1">
 		<div class="modal-dialog" role="document">
-			<button class="close" on:click={() => (open = false)}><Icon type="close" /></button>
+			<button class="close" onclick={() => (open = false)}><Icon type="close" /></button>
 			<h2>{title}</h2>
 			<div class="modal-content">
-				<slot />
+				{@render children?.()}
 			</div>
 		</div>
 	</div>

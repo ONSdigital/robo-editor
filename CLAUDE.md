@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 robo-editor is a browser-based live editor for robo-journalism templates: you write a [Pug](https://pugjs.org) template on the left, load a CSV, pick an area, and see the rendered output on the right. It is deployed to GitHub Pages at https://onsvisual.github.io/robo-editor/.
 
-It is a SvelteKit 2 app (Svelte 5, still using legacy, non-runes syntax), built as a static site with `@sveltejs/adapter-static`, following the setup of [sveltekit-starter](https://github.com/ONSvisual/sveltekit-starter). There are no tests, so check changes by running the app in a browser.
+It is a SvelteKit 2 app (Svelte 5, using runes), built as a static site with `@sveltejs/adapter-static`, following the setup of [sveltekit-starter](https://github.com/ONSvisual/sveltekit-starter). There are no tests, so check changes by running the app in a browser.
 
 ## Commands
 
@@ -37,7 +37,7 @@ You need Node 20.19 or later (for Vite 7).
 - `vite.config.js` removes `console` calls from builds, so `console.log` only appears in `npm run dev`.
 - `static/.nojekyll` stops GitHub Pages ignoring the `_app/` folder.
 
-**All state lives in `src/lib/App.svelte`.** The `src/lib/ui/` components only display it. `src/routes/+page.svelte` just renders `App`.
+**All state lives in `src/lib/App.svelte`.** The `src/lib/ui/` components only display it. `src/routes/+page.svelte` just renders `App`. Large or non-plain data (`data`, `lookup`, `places`, `output`, the CSV text) is `$state.raw`, so Svelte doesn't wrap it in deep reactive proxies before it's passed to Pug and robo-utils. `keys` and `filter` are deep `$state`, because the filter modal binds to them. Use `$state.snapshot()` before logging or storing them (the synced stores already do this). The third-party `svelte-split-pane` and `@onsvisual/svelte-charts` components still use the old syntax; `HSplitPane`'s named slots are filled with `{#snippet left()}` and `{#snippet right()}`.
 
 - **Loading data:** `makeData()` parses the CSV with robo-utils' `csvParse`. It finds the code and name columns with `getColKeys()` in `src/lib/utils.js`, which wraps robo-utils' `getCodeKey`/`getNameKey` so the editor's `lookup` matches `MagicArray.get()` and `getName()` in templates. It then builds:
     - `data`: a robo-utils `MagicArray` of every row;
