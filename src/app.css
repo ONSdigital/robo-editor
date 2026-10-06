@@ -71,3 +71,26 @@ button:not(:disabled):active {
 button:focus {
 	border-color: #666;
 }
+
+h1,
+h2,
+h3 {
+	margin: 20px 0 6px !important;
+}
+span + h1,
+span + h2,
+span + h3,
+prop + h1,
+prop + h2,
+prop + h3,
+h3.chart-title {
+	margin-top: 2px !important;
+}
+
+h1 {
+	margin-top: 0 !important;
+}
+
+h3 {
+	font-size: 1.17em !important;
+}

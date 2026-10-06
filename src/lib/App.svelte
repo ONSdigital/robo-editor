@@ -503,7 +503,7 @@
 		margin: 0 0 10px 0;
 	}
 	:global(section) {
-		margin-top: 20px;
+		margin-bottom: 20px;
 	}
 	:global(.visually-hidden) {
 		color: grey;
