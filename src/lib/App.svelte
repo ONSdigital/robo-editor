@@ -221,11 +221,6 @@
 		getPUG(asset("/data/template.pug"));
 	}
 
-	async function nlgDemo() {
-		getCSV(asset("/data/data.csv"));
-		getPUG(asset("/data/template_nlg.pug"));
-	}
-
 	async function getCSV(url) {
 		console.log("loading csv");
 		let csv_res = await fetch(url);
@@ -253,7 +248,6 @@
 	onMount(async () => {
 		window.embedDemo = embedDemo;
 		window.scrollyDemo = scrollyDemo;
-		window.nlgDemo = nlgDemo;
 		window.showHelp = () => (modal_help = true);
 
 		const storedAppVersion = await getStoredAppVersion();
@@ -453,7 +447,7 @@
 				value={id}
 				onchange={() => {
 					places = filterData(data, keys, filter);
-					place = place = places[0];
+					place = places[0];
 					saveData();
 				}}
 			/>
