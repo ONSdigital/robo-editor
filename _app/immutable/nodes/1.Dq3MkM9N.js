@@ -1,2 +1,0 @@
-//js
-import{a as u,f as g}from"../chunks/jip2LBVD.js";import{p as c,l as h,x as l,o as v,z as a,n as _}from"../chunks/DKdZ-lZb.js";import{s as e}from"../chunks/CsoHKusg.js";import{p as s}from"../chunks/CL4IeEP8.js";const x={get error(){return s.error},get status(){return s.status}},o=x;var d=g("<h1> </h1> <p> </p>",1);function E(p,m){c(m,!0);var r=d(),t=h(r),n=a(t,!0),f=_(t,2),i=a(f,!0);l(()=>{e(n,o.status),e(i,o.error?.message)}),u(p,r),v()}export{E as component};
