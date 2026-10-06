@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build && node ./scripts/js-fix",
+		"build": "vite build",
 		"build:preview": "cross-env PUBLIC_APP_ENV=preview vite build",
 		"preview": "vite preview",
 		"deploy": "gh-pages -d build -t",
