@@ -254,6 +254,7 @@
 		window.embedDemo = embedDemo;
 		window.scrollyDemo = scrollyDemo;
 		window.nlgDemo = nlgDemo;
+		window.showHelp = () => (modal_help = true);
 
 		const storedAppVersion = await getStoredAppVersion();
 		appState = await getAppState(storedAppVersion);
@@ -461,7 +462,7 @@
 	{/each}
 </Modal>
 
-<Modal title="Help" bind:open={modal_help}>
+<Modal title="How to use this editor" bind:open={modal_help}>
 	<Help />
 </Modal>
 

@@ -134,7 +134,8 @@ const editorTheme = EditorView.theme(
 	{ dark: true }
 );
 
-const highlightStyle = HighlightStyle.define([
+// Also used to highlight code in the help panel (see highlight-pug.js)
+export const highlightStyle = HighlightStyle.define([
 	{ tag: t.comment, color: colors.comment },
 	{ tag: [t.keyword, t.tagName, t.operator], color: colors.pink },
 	{

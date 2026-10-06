@@ -53,14 +53,14 @@ You need Node 20.19 or later (for Vite 7).
 
 **Demo templates** are in `static/data/`:
 
-| Template             | CSV           | Notes                                                                                                                                                                                             |
-| -------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `intro.pug`          | none          | Shown on first load and after "close". Renders with `place`, `places` and `lookup` all `null`. Its buttons call `window.embedDemo()` and `window.scrollyDemo()`, set in `App.svelte`'s `onMount`. |
-| `template_embed.pug` | `data_v2.csv` | Used by [robo-embed](https://github.com/ONSvisual/robo-embed).                                                                                                                                    |
-| `template.pug`       | `data.csv`    | Scrollytelling demo, used by [robo-scrolly](https://github.com/ONSvisual/robo-scrolly).                                                                                                           |
-| `template_nlg.pug`   | `data.csv`    | Fails on every render: it relies on RosaeNLG mixins (`pug_mixins.value`) that are no longer available.                                                                                            |
+| Template             | CSV           | Notes                                                                                                                                                                                                                  |
+| -------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `intro.pug`          | none          | Shown on first load and after "close". Renders with `place`, `places` and `lookup` all `null`. Its buttons call `window.embedDemo()`, `window.scrollyDemo()` and `window.showHelp()`, set in `App.svelte`'s `onMount`. |
+| `template_embed.pug` | `data_v2.csv` | Used by [robo-embed](https://github.com/ONSvisual/robo-embed).                                                                                                                                                         |
+| `template.pug`       | `data.csv`    | Scrollytelling demo, used by [robo-scrolly](https://github.com/ONSvisual/robo-scrolly).                                                                                                                                |
+| `template_nlg.pug`   | `data.csv`    | Fails on every render: it relies on RosaeNLG mixins (`pug_mixins.value`) that are no longer available.                                                                                                                 |
 
-**`src/lib/Help.svelte`** is the in-app help for template authors, with examples of robo-utils functions. Keep it consistent with the robo-utils API.
+**The help panel (`src/lib/Help.svelte`) is a cheat sheet** for Pug and robo-utils, with links to their documentation. Each section of `src/lib/help.js` is a tab (accessible ARIA tabs: arrow keys, Home and End move between them; the last tab is remembered while the editor is open). Its examples are data in `src/lib/help.js`. When the panel opens, each example is rendered with `renderJSON` against the demo data (`static/data/data_v2.csv`, using Hartlepool), so the outputs always match the current Pug and robo-utils; an example with `json: true` shows the JSON output rather than the HTML. Code is highlighted by `CodeBlock.svelte` using `highlightPug()` (`src/lib/ui/highlight-pug.js`), which reuses the editor's Pug tokenizer and theme. When adding an example, check it renders without an error (the panel shows any error in red).
 
 ## robo-utils
 

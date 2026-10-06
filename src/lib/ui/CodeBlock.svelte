@@ -1,21 +1,25 @@
 <script>
-	import hljs from "highlight.js";
+	import { highlightPug } from "./highlight-pug.js";
 
 	let { code = "" } = $props();
+
+	let html = $derived(highlightPug(code));
 </script>
 
-<div class="code-example">
-	<pre>{@html hljs.highlight(code, { language: "js" }).value}</pre>
-</div>
+<pre class="code-block">{@html html}</pre>
 
 <style>
-	.code-example {
-		border-left: 3px solid #ccc;
-		background-color: #f9f9f9;
-		padding: 10px;
-		margin-bottom: 24px;
-	}
-	.code-example > pre {
+	.code-block {
 		margin: 0;
+		padding: 8px 10px;
+		/* Wrap long lines, so examples can be read without scrolling */
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font-family: Monaco, Menlo, "Ubuntu Mono", Consolas, monospace;
+		font-size: 12px;
+		line-height: 1.5;
+		color: #f8f8f2;
+		background-color: #272822;
+		border-radius: 4px;
 	}
 </style>

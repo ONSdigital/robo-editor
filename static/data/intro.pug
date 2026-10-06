@@ -1,35 +1,28 @@
 h1 Robo-journalism script editor
-p This tool allows for live editing of data-driven semi-automated journalism (AKA "robo-journalism") articles using a #[a(href="https://Pugjs.org/api/getting-started.html" target="_blank") Pug template file] and a CSV data source.
+p This tool allows for live editing of data-driven semi-automated journalism (AKA "robo-journalism") articles using a #[a(href="https://pugjs.org/api/getting-started.html" target="_blank") Pug template file] and a CSV data source.
 
-p This editor is built on the ONS #[a(href="https://github.com/robo-utils" target="_blank") robo-utils] JavaScript package, which includes a number of useful Natural Language Generation (NLG) tools and functions to make it easier to generate human-readable articles.    
+p This editor is built on the ONS #[a(href="https://github.com/ONSdigital/robo-utils" target="_blank") robo-utils] JavaScript package, which includes a number of useful Natural Language Generation (NLG) tools and functions to make it easier to generate human-readable articles.    
 
 h2 Quick start
-p If you want to skip straight to the action, there are curently two demo Pug files (and associated CSVs) that you can open and edit to get a feel for how the editor works.
+p If you want to skip straight to the action, there are currently two demo Pug files (and associated CSVs) that you can open and edit to get a feel for how the editor works.
 
 h3 1. Simple article demo
-p A relatively straightforward example. The output of this demo is used in the #[a(href="https://github.com/robo-embed" target="_blank") robo-embed] Svelte Kit template. #[button(onclick="embedDemo()" class="btn-inline") Click here] to load it.
+p A relatively straightforward example. The output of this demo is used in the #[a(href="https://github.com/ONSdigital/robo-embed" target="_blank") robo-embed] Svelte Kit template. #[button(onclick="embedDemo()" class="btn-inline") Click here] to load it.
 
 h3 2. Scrolly article demo
-p A more complex demo, suitable for a localised scrollytelling article. The output of this demo is used in the #[a(href="https://github.com/robo-scrolly" target="_blank") robo-scrolly] Svelte Kit template. #[button(onclick="scrollyDemo()" class="btn-inline") Click here] to load it.
+p A more complex demo, suitable for a localised scrollytelling article. The output of this demo is used in the #[a(href="https://github.com/ONSdigital/robo-scrolly" target="_blank") robo-scrolly] Svelte Kit template. #[button(onclick="scrollyDemo()" class="btn-inline") Click here] to load it.
 
 h2 Starting from scratch
 
-h3 Loading data
-p Click "Load CSV file" to get started. This data file should be in a "wide" format, with one row per geographic area (or per topic).
-p For geographic data, each row should have an <b>areanm</b> column with the area's name, an #[b areacd] column with its GSS code, and any number of other columns with data or metadata.
-p If you want to continue editing an existing Pug file, either click "Load Pug file", or copy-paste the contents of your Pug file into the editor on the left.
+h3 1. Load a data file
+p Click #[b Load] next to #[b CSV] in the toolbar. The file should have one row per area, with an #[b areacd] column for the area's code and an #[b areanm] column for its name, plus any columns of data. Add a #[b parentcd] column if you want to refer to each area's parent, eg. its region.
+p Then choose an area from the drop-down list to preview the output for it. The buttons next to the list show the data, and let you choose which rows are included.
 
-h3 Using data in your template
-p <i>Note: Click the "show help" button in the top-right corner for a wider range of ways to sort and filter data, and to format names and numbers.</i>
-p Once a data file is loaded, you should have access to three javascript data objects that can be used in your Pug template.
-p Firstly <b>place</b> (or <b>row</b>) which contains data for the selected area, and can be used like this <b>#{'#{place.areanm}'}</b> to include the place's name in your template, and <b>#{'#{place.column_name}'}</b> to include a place-specific value.
-p Secondly, there is <b>places</b> (or <b>rows</b>), which contains an array of data objects for each of the local authorities in the dataset - it filters out regions, countries etc.. This can be used to find eg. the highest or lowest place for a particular metric, eg. <b>#{'#{places.sortBy("column_name").areanm}'}</b> would give the name of the place with the highest value.
-p Finally, there is <b>lookup</b> which allows data for every place in the dataset to be accessed via its GSS code, eg. <b>#{'#{lookup["W92000004"].column_name}'}</b> would give a data value for Wales. This lookup can also be used to access data for a parent of the selected place. Eg. <b>#{'#{lookup[place.parentcd].areanm}'}</b> would give the name of the selected area's parent – assuming there is a "parentcd" column in the CSV and the parent's data is included as a row.
-
-h3 Using the NLG features
-p There are a lot more ways to sort, filter and manipulate the data and to generate "human readable" outputs, including ranking places by value, describing change over time, formatting numbers and dealing with issues like pluralisation. Click the info button on the top-right for more information.
+h3 2. Write your template
+p Write your Pug template in the editor on the left, and the output on the right updates as you type. To work on an existing template, click #[b Load] next to #[b PUG], or paste it into the editor.
+p For a cheat sheet of how to write templates, with examples of the Pug language and the robo-utils functions and links to their full documentation, #[button(onclick="showHelp()" class="btn-inline") open the help] or click the #[b i] button in the top-right corner.
 
 h2 Saving your work
-p <i>Note: The editor auto-saves your data within the browser's local storage, so you shouldn't lose your progress if the window gets closed accidentally.</i>
-p You can export your Pug template by clicking "Save Pug file" to download your template a Pug file. If you prefer, you can also just copy-paste the text from the editor on the left into an external file.
+p <i>Note: The editor saves your template and data in your browser as you work, so you shouldn't lose your progress if the window gets closed accidentally.</i>
+p You can download your Pug template by clicking #[b Save] next to #[b PUG]. If you prefer, you can also just copy-paste the text from the editor on the left into an external file.
 p You can also save the output for all of the places/rows in your data file in a JSON, MD or RTF format. These outputs come in the form of a ZIP file with a file inside for each place/row. For convenience, these outputs also contain the Pug and CSV files.

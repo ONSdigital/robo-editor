@@ -33,7 +33,6 @@
 		"debounce": "^1.2.1",
 		"document-schema.js": "^7.16.1",
 		"gh-pages": "6.1.1",
-		"highlight.js": "^11.7.0",
 		"idb-keyval": "^6.3.0",
 		"jszip": "^3.10.1",
 		"markdown-codec": "^11.1.16",
@@ -47,6 +46,7 @@
 		"process": "^0.11.10",
 		"pug": "3.0.4",
 		"rtf-codec": "^8.1.24",
+		"style-mod": "^4.1.4",
 		"svelte": "^5.55.8",
 		"svelte-split-pane": "^0.1.2",
 		"vite": "^7.3.6"
