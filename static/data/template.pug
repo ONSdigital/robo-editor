@@ -1,85 +1,94 @@
 // Version information. YYYY-MM-DD
 
 section#top.Header
-    h1 Disability and unpaid care in #{place ? place.areanm : 'your area'}
-    p.text-big How many people are limited by a disability or long-term health problem?
+    prop.title Disability and unpaid care in #{place ? place.areanm : 'your area'}
+    prop.lede How many people are limited by a disability or long-term health problem?
     p DD MMM YYYY
-    section#top-select
-        p Select a local authority area for a personalised look at health, disability and unpaid care
+    prop.label Select a local authority area for a personalised look at health, disability and unpaid care
+
+-// Variables
+-var ew = lookup["K04000001"]
+-var eng = lookup["E92000001"]
+-var wales = lookup["W92000004"]
+-// Welsh areas have no region, so they're compared with the rest of Wales
+-var group = place ? (place.regioncd ? places.filterBy("regioncd", place.regioncd) : places.filterBy("ctrycd", place.ctrycd)) : []
+-var groupArea = place ? lookup[place.regioncd || place.ctrycd] : null
+-// Words for a change since 2001, eg. "up from 24.4%"
+-var upDown = {texts: ["up from", "the same as", "down from"]}
 
 if place
     section#intro.Filler
-        p.text-big There are around #{Math.round(lookup["K04000001"].long_term_illness_2011 / 1e6)} million people in England and Wales whose day-to-day activities are limited by a long-term health problem or disability, while around #{Math.round(lookup["K04000001"].unpaid_care_20_plus_2011 / 1e6)} million people are providing at least 20 hours a week of unpaid care for someone else.
-        p.text-big This article uses data from the 2011 Census to show how the numbers vary from area to area.
+        p There are #{ew.long_term_illness_2011.approx()} people in England and Wales whose day-to-day activities are limited by a long-term health problem or disability, while #{ew.unpaid_care_20_plus_2011.approx()} people are providing at least 20 hours a week of unpaid care for someone else.
+        p This article uses data from the 2011 Census to show how the numbers vary from area to area.
     
     section#section1.Section
-        h2 How #{place.areanm} compares on long-term health problems and disability
-        p In 2011, around #{lookup["E92000001"].long_term_illness_2011_pc.format(".0f")}% of the population of England and #{lookup["W92000004"].long_term_illness_2011_pc.format(".0f")}% of people in Wales were limited, either a little or a lot, in their day-to-day activities because of a long-term health problem or disability.
+        prop.title How #{place.areanm} compares on long-term health problems and disability
+        p In 2011, around #{eng.long_term_illness_2011_pc.format(".0f")}% of the population of England and #{wales.long_term_illness_2011_pc.format(".0f")}% of people in Wales were limited, either a little or a lot, in their day-to-day activities because of a long-term health problem or disability.
     
     section#scatter.Scroller
         prop.caption Proportion of people with long-term health problems
         section#scatter_a
-            p In #[mark(style="background-color: #206095") #{place.areanm}], it was around #{place.long_term_illness_2011.format(",.2r")} people or #{place.long_term_illness_2011_pc.format(".0f")}% of the population.
-            p.visually-hidden This is a visually hidden description for screen readers.
+            p In #[mark(style="background-color: #206095") #{place.areanm}], it was #{place.long_term_illness_2011.approx()} people or #{place.long_term_illness_2011_pc.format(".0f")}% of the population.
+            p.ons-u-vh This is a visually hidden description for screen readers.
         section#scatter_b
             p This includes #{place.limited_lot_2011.format(",.2r")} people (#{place.limited_lot_2011_pc.format(".0f")}%) who said their day to day activities were limited a lot.
         section#scatter_c
-            prop.highlighted #{places.filterBy("regioncd", place.regioncd).map(p => p.areacd).join("|")}
-            p And this is how the percentage for #{place.areanm} compares to all of the local authorities in #{lookup[place.regioncd ? place.regioncd : place.ctrycd].areanm}.
+            prop.highlighted #{group.map(p => p.areacd).join("|")}
+            p And this is how the percentage for #{place.areanm} compares to all of the local authorities in #{groupArea.getName("the")}, where it had #{group.getRank(place, "limited_lot_2011_pc").describe()} percentage.
     
     section#filler1.Filler
-        p.text-big In England, #{Math.round(lookup["E92000001"].limited_lot_2011 / 1e6)} million people (#{lookup["E92000001"].limited_lot_2011_pc}%) were limited a lot while in Wales it was #{lookup["W92000004"].limited_lot_2011.format(",.3r")} people (#{lookup["W92000004"].limited_lot_2011_pc}%).
+        p In England, #{eng.limited_lot_2011.approx()} people (#{eng.limited_lot_2011_pc}%) were limited a lot while in Wales it was #{wales.limited_lot_2011.approx()} people (#{wales.limited_lot_2011_pc}%).
     
     section#section2.Section
-        h2 Disability and long-term health problems are most prevalent in Wales and the north of England
+        prop.title Disability and long-term health problems are most prevalent in Wales and the north of England
         p The highest percentages of people with a disability or health problem that limited them a lot in their day-to-day lives were recorded in parts of Wales and the north of England.
     
     mixin highest_disability(place)
         prop.highlighted #{place.areacd}
-        p The highest was in #{place.areanm}, where #{place.long_term_illness_2011_pc}% of the usual population had a disability or health problem. This is down from #{place.long_term_illness_2001_pc}% a decade earlier.
+        p The highest was in #{place.getName("the")}, where #{place.long_term_illness_2011_pc}% of the usual population had a disability or health problem. This is #{place.long_term_illness_2011_pc.compareTo(place.long_term_illness_2001_pc, upDown)} #{place.long_term_illness_2001_pc}% a decade earlier.
     mixin lowest_disability(place)
         prop.highlighted #{place.areacd}
-        p The lowest was in #{place.areanm}, where #{place.long_term_illness_2011_pc}% of the usual population had a disability or health problem in 2011, down from #{place.long_term_illness_2001_pc}% in the 2001 Census.
+        p The lowest was in #{place.getName("the")}, where #{place.long_term_illness_2011_pc}% of the usual population had a disability or health problem in 2011, #{place.long_term_illness_2011_pc.compareTo(place.long_term_illness_2001_pc, upDown)} #{place.long_term_illness_2001_pc}% in the 2001 Census.
     
     section#map1.Scroller
         prop.caption Proportion of people with long-term health problems
         section#map1_a
             p This is a map showing the proportion of people with a disability or health problem that limited them either a little or a lot, from #[mark(style="background-color: #EAECB1") low] to #[mark(style="background-color: #000D54") high].
         section#map1_b
-            +highest_disability(places.sortBy("long_term_illness_2011_pc")[0])
+            +highest_disability(places.top("long_term_illness_2011_pc"))
         section#map1_c
-            +lowest_disability(places.sortBy("long_term_illness_2011_pc").flip()[0])
+            +lowest_disability(places.bottom("long_term_illness_2011_pc"))
         
     section#section3.Section
-        h2 1 in 25 people are caring for someone unpaid for at least 20 hours a week
-        p In the 2011 Census, data showed that around #{place.unpaid_care_20_plus_2011.format(",.2r")} people (#{place.unpaid_care_20_plus_2011_pc.format(",.2r")}%) were caring for someone else for at least 20 hours a week in #{place.areanm}.
-        p This compares with #{place.unpaid_care_20_plus_2001.format(",.2r")} (#{place.unpaid_care_20_plus_2001_pc.format(",.2r")}%) in 2001.
-        p Across England in 2011, #{Math.round(lookup["E92000001"].unpaid_care_20_plus_2011 / 1e6)} million people, #{lookup["E92000001"].unpaid_care_20_plus_2011_pc}% of the population, provided at least 20 hours a week of unpaid care to someone else. This is up from #{lookup["E92000001"].unpaid_care_20_plus_2001_pc}% in 2001.
-        p In Wales, it was #{lookup["W92000004"].unpaid_care_20_plus_2011.format(",.3r")} people, more than one in 20 of the population (#{lookup["E92000001"].unpaid_care_20_plus_2011_pc}%), up from #{lookup["W92000004"].unpaid_care_20_plus_2001.format(",.3r")} (#{lookup["E92000001"].unpaid_care_20_plus_2001_pc}%) in 2001.
+        prop.title #{capitalise(toFraction(ew.unpaid_care_20_plus_2011_pc / 100))} people are caring for someone unpaid for at least 20 hours a week
+        p In the 2011 Census, data showed that #{place.unpaid_care_20_plus_2011.approx()} people (#{place.unpaid_care_20_plus_2011_pc.format(",.2r")}%) were caring for someone else for at least 20 hours a week in #{place.areanm}.
+        p This compares with #{place.unpaid_care_20_plus_2001.approx()} (#{place.unpaid_care_20_plus_2001_pc.format(",.2r")}%) in 2001.
+        p Across England in 2011, #{eng.unpaid_care_20_plus_2011.approx()} people, #{eng.unpaid_care_20_plus_2011_pc}% of the population, provided at least 20 hours a week of unpaid care to someone else. This is #{eng.unpaid_care_20_plus_2011_pc.compareTo(eng.unpaid_care_20_plus_2001_pc, upDown)} #{eng.unpaid_care_20_plus_2001_pc}% in 2001.
+        p In Wales, it was #{wales.unpaid_care_20_plus_2011.approx()} people, around #{toFraction(wales.unpaid_care_20_plus_2011_pc / 100)} of the population (#{wales.unpaid_care_20_plus_2011_pc}%), #{wales.unpaid_care_20_plus_2011_pc.compareTo(wales.unpaid_care_20_plus_2001_pc, upDown)} #{wales.unpaid_care_20_plus_2001.approx()} (#{wales.unpaid_care_20_plus_2001_pc}%) in 2001.
     
     mixin highest_care(place)
         prop.highlighted #{place.areacd}
-        p The highest was in #{place.areanm}, where #{place.unpaid_care_20_plus_2011_pc}% of the usual population provided at least 20 hours a week of unpaid care. This is up from #{place.unpaid_care_20_plus_2001_pc}% a decade earlier.
+        p The highest was in #{place.getName("the")}, where #{place.unpaid_care_20_plus_2011_pc}% of the usual population provided at least 20 hours a week of unpaid care. This is #{place.unpaid_care_20_plus_2011_pc.compareTo(place.unpaid_care_20_plus_2001_pc, upDown)} #{place.unpaid_care_20_plus_2001_pc}% a decade earlier.
     mixin lowest_care(place)
         prop.highlighted #{place.areacd}
-        p The lowest was in the #{place.areanm}, where #{place.unpaid_care_20_plus_2011_pc}% of the usual population had a disability or health problem that limited them either a little or a lot in 2011, down from #{place.unpaid_care_20_plus_2001_pc}% in the 2001 census.
+        p The lowest was in #{place.getName("the")}, where #{place.unpaid_care_20_plus_2011_pc}% of the usual population provided at least 20 hours a week of unpaid care in 2011, #{place.unpaid_care_20_plus_2011_pc.compareTo(place.unpaid_care_20_plus_2001_pc, upDown)} #{place.unpaid_care_20_plus_2001_pc}% in the 2001 Census.
     
     section#map2.Scroller
         prop.caption Proportion of people caring for someone else
         section#map2_a
             p This is a map showing the proportion of people caring for someone else, unpaid, for at least 20 hours a week in 2011, from #[mark(style="background-color: #EAECB1") low] to #[mark(style="background-color: #000D54") high].
         section#map2_b
-            +highest_care(places.sortBy("unpaid_care_20_plus_2011_pc")[0])
+            +highest_care(places.top("unpaid_care_20_plus_2011_pc"))
         section#map2_c
-            +lowest_care(places.sortBy("unpaid_care_20_plus_2011_pc").flip()[0])
+            +lowest_care(places.bottom("unpaid_care_20_plus_2011_pc"))
     
     mixin highest_care50(place_w, place_e)
-        p #{place_w.areanm} had the highest percentage in Wales of people providing 50 hours or more unpaid care per week, around #{place_w.unpaid_care_50_plus_2011_pc.format(".0f")}%. In England, the highest percentage was around #{place_e.unpaid_care_50_plus_2011_pc.format(".0f")}% in #{place_e.areanm}.
+        p #{place_w.getName()} had the highest percentage in Wales of people providing 50 hours or more unpaid care per week, around #{place_w.unpaid_care_50_plus_2011_pc.format(".0f")}%. In England, the highest percentage was around #{place_e.unpaid_care_50_plus_2011_pc.format(".0f")}% #{place_e.getName("in")}.
     mixin lowest_care50(place_w, place_e)
-        p This compares with just #{place_e.unpaid_care_50_plus_2011_pc.format(".0f")}% in #{place_e.areanm}, the lowest in England, and #{place_w.unpaid_care_50_plus_2011_pc.format(".0f")}% in #{place_w.areanm}, the lowest in Wales.
+        p This compares with just #{place_e.unpaid_care_50_plus_2011_pc.format(".0f")}% #{place_e.getName("in")}, the lowest in England, and #{place_w.unpaid_care_50_plus_2011_pc.format(".0f")}% #{place_w.getName("in")}, the lowest in Wales.
     
     section#section4.Section
-        p Across England and Wales, around #{Math.round(lookup["K04000001"].unpaid_care_20_plus_2011 / 1e6)} million people (#{lookup["K04000001"].unpaid_care_20_plus_2011_pc}%) provided unpaid care for 20 hours or more a week, with #{Math.round(lookup["K04000001"].unpaid_care_50_plus_2011 / 1e6)} million (#{lookup["K04000001"].unpaid_care_50_plus_2011_pc}%) providing 50 hours a week or more.
-        p In #{place.areanm} in 2011, #{place.unpaid_care_50_plus_2011.format(",.2r")} people (#{place.unpaid_care_50_plus_2011_pc.format(",.2r")}%) were caring for someone else, unpaid, for at least 50 hours a week.
-        +highest_care50(places.filterBy("ctrycd", "W92000004").sortBy("unpaid_care_50_plus_2011_pc")[0], places.filterBy("ctrycd", "E92000001").sortBy("unpaid_care_50_plus_2011_pc")[0])
-        +lowest_care50(places.filterBy("ctrycd", "W92000004").sortBy("unpaid_care_50_plus_2011_pc").flip()[0], places.filterBy("ctrycd", "E92000001").sortBy("unpaid_care_50_plus_2011_pc").flip()[0])
+        p Across England and Wales, #{ew.unpaid_care_20_plus_2011.approx()} people (#{ew.unpaid_care_20_plus_2011_pc}%) provided unpaid care for 20 hours or more a week, with #{ew.unpaid_care_50_plus_2011.approx()} (#{ew.unpaid_care_50_plus_2011_pc}%) providing 50 hours a week or more.
+        p In #{place.areanm} in 2011, #{place.unpaid_care_50_plus_2011.approx()} people (#{place.unpaid_care_50_plus_2011_pc.format(",.2r")}%) were caring for someone else, unpaid, for at least 50 hours a week.
+        +highest_care50(places.filterBy("ctrycd", "W92000004").top("unpaid_care_50_plus_2011_pc"), places.filterBy("ctrycd", "E92000001").top("unpaid_care_50_plus_2011_pc"))
+        +lowest_care50(places.filterBy("ctrycd", "W92000004").bottom("unpaid_care_50_plus_2011_pc"), places.filterBy("ctrycd", "E92000001").bottom("unpaid_care_50_plus_2011_pc"))
