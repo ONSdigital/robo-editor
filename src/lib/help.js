@@ -55,6 +55,12 @@ export const sections = [
 				link: pug("iteration")
 			},
 			{
+				title: "Mixins",
+				note: "A mixin is a reusable block of Pug. Here, the same paragraph is written for the place and its parent area, by passing each row to the mixin.",
+				code: "mixin summary(area)\n  p #{area.areanm} has #{area.p2020.format()} people, with a median age of #{area.age_med}.\n\n- const parent = lookup[place.getParent()]\n+summary(place)\n+summary(parent)",
+				link: pug("mixins")
+			},
+			{
 				title: "Comments",
 				note: "// comments are returned as notes in the JSON output. //- comments are left out.",
 				code: "// Version 1.0\n//- Not included anywhere\np Some text",
