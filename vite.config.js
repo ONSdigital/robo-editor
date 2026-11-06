@@ -16,10 +16,6 @@ const config = {
 			resolve: stub("resolve")
 		}
 	},
-	//removes console.logs in production
-	esbuild: {
-		drop: ["console", "debugger"]
-	},
 	ssr: {
 		noExternal: ["layercake"]
 	}
