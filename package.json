@@ -9,7 +9,6 @@
 		"build": "vite build",
 		"build:preview": "cross-env PUBLIC_APP_ENV=preview vite build",
 		"preview": "vite preview",
-		"deploy": "gh-pages -d build -t",
 		"lint": "prettier --ignore-path .gitignore --ignore-path .prettierignore --check .",
 		"format": "prettier --ignore-path .gitignore --ignore-path .prettierignore --write ."
 	},
@@ -33,7 +32,6 @@
 		"d3-format": "latest",
 		"debounce": "^1.2.1",
 		"document-schema.js": "7.3.0",
-		"gh-pages": "6.1.1",
 		"idb-keyval": "^6.3.0",
 		"jszip": "^3.10.1",
 		"markdown-codec": "6.4.2",

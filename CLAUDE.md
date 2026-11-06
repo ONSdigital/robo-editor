@@ -15,18 +15,18 @@ npm run dev            # dev server at localhost:5173
 npm run build          # static build to build/ (relative URLs)
 npm run build:preview  # build with base path /robo-editor and a 404.html fallback (not prerendered)
 npm run preview        # serve the built app
-npm run deploy         # publish build/ to the gh-pages branch (run npm run build first)
 npm run lint           # prettier --check (with prettier-plugin-svelte)
 npm run format         # prettier --write
 ```
 
 You need Node 20.19+ or 22.12+ (for Vite 7).
 
+Deployment is by GitHub Action (`.github/workflows/deploy.yml`, based on robo-embed's, without its data step and using `npm run build` rather than `build:preview`, because this is a single-path app). Every push to `main` runs `npm run build` and publishes `build/` to the `gh-pages` branch, which GitHub Pages serves. Pull requests to `main` only run the build.
+
 Formatting (`.prettierrc`) matches robo-utils: tabs (width 4), print width 100, no trailing commas, plus `prettier-plugin-svelte` for `.svelte` files. VS Code formats on save (`.vscode/settings.json`).
 
 **Dependencies and `npm audit`:**
 
-- `gh-pages` is pinned to exactly `6.1.1`. Versions 6.2.0 and later depend on `braces` (through globby, fast-glob and micromatch), which has a high-severity advisory with no fixed version. Don't change the pin to `^6.1.1`, which would install 6.3.0.
 - The RTF export's packages are pinned to exactly `rtf-codec` `4.0.5`, `markdown-codec` `6.4.2`, `document-schema.js` `7.3.0` and `archive-codec` `1.7.0` (a direct dependency only so that this version is used). Later versions, including the latest at the time of pinning, require exactly `zod` 4.4.3, which has a high-severity advisory (fixed in 4.6.6). Compared with the newer versions on sample documents, the only change in the RTF output was that table header rows aren't flagged with `\trhdr`. To unpin, first check with `npm view rtf-codec dependencies.zod` that a newer version allows a fixed `zod`, and test **Save output** as RTF.
 - The remaining 6 low-severity advisories (`cookie`, `deepmerge`, and the `@sveltejs/*` packages that depend on them or on SvelteKit's own advisories) are accepted, as in sveltekit-starter. Fixing them needs SvelteKit 3 and Vite 8.
 - Don't add npm `overrides` to silence advisories.
@@ -35,7 +35,7 @@ Formatting (`.prettierrc`) matches robo-utils: tabs (width 4), print width 100, 
 
 **Build setup** (copied from sveltekit-starter):
 
-- `src/routes/+layout.js` turns off server-side rendering (`ssr = false`), because the editor only works in the browser (CodeMirror, Pug's Node shims, IndexedDB). The page is still prerendered as an empty shell, which is what lets the production build use relative URLs and work at any path, including https://onsdigital.github.io/robo-editor/.
+- `src/routes/+layout.js` turns off server-side rendering (`ssr = false`), because the editor only works in the browser (CodeMirror, Pug's Node shims, IndexedDB). In `npm run build` the page is still prerendered as an empty shell, which is what lets that build use relative URLs and work at any path, including the deployed site at https://onsdigital.github.io/robo-editor/. `npm run build:preview` has no `index.html`, only a `404.html` fallback, so its home page would return HTTP status 404.
 - Base paths are set in `src/app.config.js` and used by `svelte.config.js`. Use `asset()` from `$app/paths` for files in `static/` (eg. `asset("/data/intro.pug")`), never root-absolute URLs.
 - `static/.nojekyll` stops GitHub Pages ignoring the `_app/` folder.
 
