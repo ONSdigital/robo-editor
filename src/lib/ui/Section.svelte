@@ -10,7 +10,10 @@
 	{#if section.id && !plaintext}<span class="id-label">id: {section.id}</span>{/if}
 	{#if section.type === "Chart" && section.chartType && !plaintext}
 		{#if Array.isArray(section.data) && section.data[0] && Object.keys(section.data[0]).length > 0}
-			<Chart {section} />
+			<!-- Chart only reads chartType when it's created, so recreate it when the type changes -->
+			{#key section.chartType}
+				<Chart {section} />
+			{/key}
 		{:else}
 			<p><mark class="warn">Cannot render chart. Empty/null data array.</mark></p>
 		{/if}
