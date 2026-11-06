@@ -8,5 +8,5 @@
 //   production build always is.
 // base_preview should be a path, because the preview build is not prerendered: it relies on a
 // 404.html fallback page, and SvelteKit always gives fallback pages absolute URLs.
-export const base_prod = null; // Any path, eg. https://onsvisual.github.io/robo-editor/
+export const base_prod = null; // Any path, eg. https://onsdigital.github.io/robo-editor/
 export const base_preview = "/robo-editor"; // Directory on datavisweb preview server or Github Pages

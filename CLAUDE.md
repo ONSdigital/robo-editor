@@ -27,7 +27,8 @@ Formatting (`.prettierrc`) matches robo-utils: tabs (width 4), print width 100, 
 **Dependencies and `npm audit`:**
 
 - `gh-pages` is pinned to exactly `6.1.1`. Versions 6.2.0 and later depend on `braces` (through globby, fast-glob and micromatch), which has a high-severity advisory with no fixed version. Don't change the pin to `^6.1.1`, which would install 6.3.0.
-- The 3 low-severity `cookie` advisories come from SvelteKit 2 and are accepted, as in sveltekit-starter. They are only fixed in SvelteKit 3.
+- The RTF export's packages are pinned to exactly `rtf-codec` `4.0.5`, `markdown-codec` `6.4.2`, `document-schema.js` `7.3.0` and `archive-codec` `1.7.0` (a direct dependency only so that this version is used). Later versions, including the latest at the time of pinning, require exactly `zod` 4.4.3, which has a high-severity advisory (fixed in 4.6.6). Compared with the newer versions on sample documents, the only change in the RTF output was that table header rows aren't flagged with `\trhdr`. To unpin, first check with `npm view rtf-codec dependencies.zod` that a newer version allows a fixed `zod`, and test **Save output** as RTF.
+- The remaining 6 low-severity advisories (`cookie`, `deepmerge`, and the `@sveltejs/*` packages that depend on them or on SvelteKit's own advisories) are accepted, as in sveltekit-starter. Fixing them needs SvelteKit 3 and Vite 8.
 - Don't add npm `overrides` to silence advisories.
 
 ## Architecture
