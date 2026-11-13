@@ -1,7 +1,8 @@
 <script>
 	let { data } = $props();
 
-	let cols = $derived(data ? Object.keys(data[0]) : []);
+	// The CSV's columns, in order (data is a MagicArray, and may be empty if the filter leaves no rows)
+	let cols = $derived(data?.length ? data.columns : []);
 </script>
 
 {#if data}

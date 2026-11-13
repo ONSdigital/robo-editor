@@ -2,13 +2,14 @@
 	import { onMount, mount, unmount, flushSync } from "svelte";
 	import { asset } from "$app/paths";
 	import pug from "$lib/pug/index.js";
-	import { MagicArray, csvParse, renderJSON, ascending } from "@onsvisual/robo-utils";
+	import { renderJSON } from "@onsvisual/robo-utils";
 	import debounce from "debounce";
 	import JSZip from "jszip";
 	import { NodeHtmlMarkdown } from "node-html-markdown";
 	import { markdownToRtf } from "./rtf.js";
 	import { get } from "svelte/store";
-	import { download, sleep, getColKeys } from "./utils";
+	import { download, sleep, parsePugError } from "./utils";
+	import { checkCSV, buildData, filterData, rowLabel } from "./data.js";
 	import { appVersion } from "./config.js";
 	import { getAppState, getStoredAppVersion, setStoredAppVersion } from "./util/state";
 	import { HSplitPane } from "svelte-split-pane";
@@ -17,6 +18,7 @@
 	import Output from "./ui/Output.svelte";
 	import Modal from "./ui/Modal.svelte";
 	import Table from "./ui/Table.svelte";
+	import CsvReport from "./ui/CsvReport.svelte";
 	import Help from "./Help.svelte";
 
 	// CONSTANTS
@@ -47,6 +49,16 @@
 	let modal_data = $state(false);
 	let modal_help = $state(false);
 	let modal_filter = $state(false);
+	// The result of the last attempt to load a CSV (shown in the CSV check modal), and of the CSV
+	// that is loaded now (for the warnings button)
+	let csv_report = $state.raw(null),
+		csv_status = $state.raw(null);
+	let modal_csv = $state(false);
+	// The result of Validate: { checked, total, failed: [{ place, label, message }], stopped }
+	let validation = $state.raw(null);
+	let modal_validate = $state(false);
+	// A message for the user, eg. when a file can't be fetched ({ title, text, detail })
+	let notice = $state.raw(null);
 	let progress = $state(0);
 
 	// BINDINGS
@@ -56,7 +68,13 @@
 	let appState;
 
 	const render = debounce(() => {
-		output = renderJSON(template, place, places, lookup, pug);
+		try {
+			output = renderJSON(template, place, places, lookup, pug);
+		} catch (err) {
+			// renderJSON returns Pug errors, but can still throw (eg. for a row with no name)
+			console.error(err);
+			output = { sections: [], error: String(err) };
+		}
 		if (appState && template !== get(appState.template)) appState.template.set(template);
 	}, 500);
 	$effect(() => {
@@ -75,64 +93,78 @@
 			reader.onload = (e) => editor.setContent(e.target.result);
 			reader.readAsText(file);
 		}
+		pug_upload.value = "";
 	}
 
+	// Render the template for every area (and no area), stopping after 5 errors
 	async function validatePUG() {
 		progress = 0;
-		const invalid = [];
-
+		const failed = [];
 		const plcs = places ? [null, ...places] : [null];
 
 		let i = 0;
-		while (i < plcs.length && invalid.length < 5) {
+		while (i < plcs.length && failed.length < 5) {
 			progress = i === plcs.length - 1 ? 0 : (i + 1) / plcs.length;
 			await sleep(0);
-			let output = renderJSON(template, plcs[i], places, lookup, pug);
-			if (output.error) invalid.push(plcs[i] ? plcs[i][keys.label] : "No area selected");
+			let error;
+			try {
+				error = renderJSON(template, plcs[i], places, lookup, pug).error;
+			} catch (err) {
+				error = String(err);
+			}
+			if (error) {
+				const label = plcs[i] ? rowLabel(plcs[i], keys) : "No area selected";
+				const { message, location } = parsePugError(error);
+				failed.push({ place: plcs[i], label, message: `${message}${location}` });
+			}
 			i++;
 		}
-
-		if (invalid[0]) {
-			alert(`Validation failed for areas including ${invalid.join(", ")}`);
-		} else {
-			alert("Validation passed for all areas.");
-		}
+		progress = 0;
+		validation = { checked: i, total: plcs.length, failed, stopped: i < plcs.length };
+		modal_validate = true;
+	}
+	// Show an area from the Validate results in the preview
+	function selectPlace(p) {
+		place = p;
+		modal_validate = false;
 	}
 
-	function makeData(str, _keys = null, _filter = null) {
-		try {
+	// Load a CSV string. If it has problems that stop it loading (see checkCSV() in data.js), the
+	// current data is kept and the CSV check modal says what to fix. With quiet = true (when
+	// restoring the saved CSV), the modal only opens if the CSV can't be loaded.
+	function makeData(
+		str,
+		_keys = null,
+		_filter = null,
+		{ quiet = false, source = null, columns = false } = {}
+	) {
+		const check = checkCSV(str, _keys);
+		let result = null,
+			error = null;
+		if (!check.errors.length) {
+			try {
+				result = buildData(str, _keys, _filter, filter_default);
+			} catch (err) {
+				console.error("Failed to load data", err);
+				error = err.message;
+			}
+		}
+		csv_report = { ...check, source, columns, loaded: !!result, error, hadData: !!data };
+		if (result) {
 			data_raw = str;
-			let newdata = csvParse(str);
-			cols = newdata.columns;
-			keys = _keys ? _keys : getColKeys(cols);
-			ids = Array.from(new Set(newdata.map((d) => `${d[keys.id]}`.slice(0, 3)))).sort(
-				ascending
-			);
-			console.log($state.snapshot(keys), ids);
-			filter = _filter
-				? _filter
-				: filter_default.some((f) => ids.includes(f))
-					? filter_default.filter((f) => ids.includes(f))
-					: [];
-
-			data = MagicArray.from(newdata);
-
-			let newlookup = {};
-			data.forEach((d) => {
-				newlookup[d[keys.id]] = d;
-				newlookup[d[keys.label]] = d;
-			});
-
-			places = filterData(data, keys, filter);
-			place = places[0];
-			lookup = newlookup;
+			({ data, cols, keys, ids, filter, lookup, places } = result);
+			place = places[0] ?? null;
+			csv_status = csv_report;
 			saveData();
-		} catch (err) {
-			const msg = "Failed to load data. Please refresh page.";
-			// Forget the data that failed to load (the template is kept)
-			for (const key of ["dataRaw", "keys", "filter"]) appState?.[key].set(null);
-			console.error(msg, err);
-			alert(msg);
+		}
+		if (!result || (check.warnings.length && !quiet)) modal_csv = true;
+		return !!result;
+	}
+	// Choose the id or label column in the filter modal (keeping the current ones if they don't work)
+	function changeKeys(e, key) {
+		const newKeys = { ...$state.snapshot(keys), [key]: e.target.value };
+		if (!makeData(data_raw, newKeys, null, { columns: true, source: csv_status?.source })) {
+			e.target.value = keys[key];
 		}
 	}
 	function clickCSV() {
@@ -143,17 +175,11 @@
 
 		if (file) {
 			const reader = new FileReader();
-			reader.onload = (e) => makeData(e.target.result);
+			reader.onload = (e) => makeData(e.target.result, null, null, { source: file.name });
 			reader.readAsText(file);
 		}
-	}
-
-	function filterData(data, keys, filter) {
-		let filtered =
-			filter.length > 0
-				? data.filter((d) => filter.includes(d[keys.id].slice(0, 3)))
-				: new MagicArray(...data);
-		return filtered.sort((a, b) => a[keys.label].localeCompare(b[keys.label]));
+		// So that choosing the same file again (eg. after fixing it) loads it again
+		csv_upload.value = "";
 	}
 
 	function savePUG() {
@@ -177,7 +203,7 @@
 			await sleep(0);
 			const output = renderJSON(template, plcs[i], places, lookup, pug);
 			if (!output.error) {
-				const filename = `${plcs[i] ? `${plcs[i][keys.id]}_${plcs[i][keys.label]}` : "Default"}.${mode}`;
+				const filename = `${plcs[i] ? `${plcs[i][keys.id]}_${rowLabel(plcs[i], keys)}` : "Default"}.${mode}`;
 				if (mode === "md" || mode === "rtf") {
 					const component = mount(Output, {
 						target: offScreen,
@@ -207,6 +233,8 @@
 		place = null;
 		// Close the CSV too, so it isn't restored with the intro next time
 		data_raw = null;
+		data = null;
+		csv_status = null;
 		for (const key of ["dataRaw", "keys", "filter"]) appState?.[key].set(null);
 		getPUG(asset("/data/intro.pug"));
 	}
@@ -221,17 +249,40 @@
 		getPUG(asset("/data/template.pug"));
 	}
 
+	// Fetch a file's text, throwing an error for a failed request (eg. a 404)
+	async function fetchText(url) {
+		const res = await fetch(url);
+		if (!res.ok) throw new Error(`${res.status} ${res.statusText}`.trim());
+		return res.text();
+	}
+
 	async function getCSV(url) {
-		console.log("loading csv");
-		let csv_res = await fetch(url);
-		let csv_str = await csv_res.text();
-		makeData(csv_str);
+		let csv_str;
+		try {
+			csv_str = await fetchText(url);
+		} catch (err) {
+			notice = {
+				title: "Couldn't load the CSV",
+				text: `Couldn't load ${url}`,
+				detail: err.message
+			};
+			return;
+		}
+		makeData(csv_str, null, null, { source: url });
 	}
 
 	async function getPUG(url) {
-		console.log("loading pug");
-		let pug_res = await fetch(url);
-		let pug = await pug_res.text();
+		let pug;
+		try {
+			pug = await fetchText(url);
+		} catch (err) {
+			notice = {
+				title: "Couldn't load the PUG",
+				text: `Couldn't load ${url}`,
+				detail: err.message
+			};
+			return;
+		}
 		await sleep(50);
 		template = pug;
 		editor.setContent(template);
@@ -269,7 +320,15 @@
 		if (!pugParam && savedTemplate) {
 			// A template without a CSV (eg. the intro page) is saved without data
 			const savedData = get(appState.dataRaw);
-			if (savedData) makeData(savedData, get(appState.keys), get(appState.filter));
+			if (savedData) {
+				const loaded = makeData(savedData, get(appState.keys), get(appState.filter), {
+					quiet: true,
+					source: "the CSV saved from your last session"
+				});
+				// Forget saved data that can't be loaded (the template is kept)
+				if (!loaded)
+					for (const key of ["dataRaw", "keys", "filter"]) appState[key].set(null);
+			}
 			template = savedTemplate;
 			editor.setContent(template);
 		} else if (!pugParam) {
@@ -354,7 +413,7 @@
 				{#if places}
 					<option value={null}>No area selected</option>
 					{#each places as option}
-						<option value={option}>{option[keys.label]}</option>
+						<option value={option}>{rowLabel(option, keys)}</option>
 					{/each}
 				{:else}
 					<option value={null}>Load a CSV data file</option>
@@ -371,6 +430,17 @@
 				title="Filter CSV by ID"
 				onclick={() => (modal_filter = true)}><Icon type="filter" /></button
 			>
+			{#if csv_status?.warnings.length}
+				<button
+					class="warnings"
+					title="Show CSV warnings"
+					onclick={() => {
+						csv_report = csv_status;
+						modal_csv = true;
+					}}
+					><Icon type="warning" margin /><span>{csv_status.warnings.length}</span></button
+				>
+			{/if}
 			<div class="v-divider"></div>
 			<span>Output</span>
 			<button title="Save as RTF" onclick={() => saveOutput("rtf")}
@@ -415,11 +485,11 @@
 	<Table data={places} />
 </Modal>
 
-<Modal title="CSV columns and filters" bind:open={modal_filter}>
+<Modal title="CSV columns and filters" compact bind:open={modal_filter}>
 	<p>Select <strong>id</strong> and <strong>label</strong> columns in dataset.</p>
 	<label class="checkbox-label">
 		id:<br />
-		<select bind:value={keys.id} onchange={() => makeData(data_raw, keys)}>
+		<select value={keys.id} onchange={(e) => changeKeys(e, "id")}>
 			{#each cols as col}
 				<option value={col}>{col}</option>
 			{/each}
@@ -427,7 +497,7 @@
 	</label>
 	<label class="checkbox-label">
 		label:<br />
-		<select bind:value={keys.label} onchange={() => makeData(data_raw, keys)}>
+		<select value={keys.label} onchange={(e) => changeKeys(e, "label")}>
 			{#each cols as col}
 				<option value={col}>{col}</option>
 			{/each}
@@ -458,6 +528,56 @@
 
 <Modal title="How to use this editor" bind:open={modal_help}>
 	<Help />
+</Modal>
+
+<Modal
+	title={csv_report?.loaded !== false
+		? "CSV check"
+		: csv_report.columns
+			? "These columns can't be used"
+			: "This CSV can't be loaded"}
+	compact
+	bind:open={modal_csv}
+>
+	<CsvReport report={csv_report} />
+</Modal>
+
+<Modal title={notice?.title} compact bind:open={() => !!notice, (open) => !open && (notice = null)}>
+	<p>{notice?.text}</p>
+	{#if notice?.detail}<p class="notice-detail">{notice.detail}</p>{/if}
+</Modal>
+
+<Modal title="Validate" compact bind:open={modal_validate}>
+	{#if validation?.failed.length === 0}
+		<p class="status ok">
+			<strong>No errors.</strong>
+			{validation.total > 1
+				? `The template rendered for all ${validation.total - 1} areas, and with no area selected.`
+				: "The template rendered with no area selected. Load a CSV to check it for every area."}
+		</p>
+	{:else if validation}
+		<p class="status error">
+			<strong
+				>The template gave errors for {validation.stopped ? "at least " : ""}{validation
+					.failed.length}
+				{validation.failed.length === 1 ? "area" : "areas"}.</strong
+			>
+			{validation.stopped
+				? `Validate stops after ${validation.failed.length} errors, so it checked ${validation.checked} of ${validation.total}.`
+				: ""}
+		</p>
+		<ul class="validate-list">
+			{#each validation.failed as item}
+				<li>
+					<button class="link" onclick={() => selectPlace(item.place)}
+						>{item.label}</button
+					>:
+					{item.message}
+				</li>
+			{/each}
+		</ul>
+		<p>Select an area to show its error in the preview.</p>
+	{/if}
 </Modal>
 
 <div style:display="none" bind:this={offScreen}></div>
@@ -600,6 +720,43 @@
 		left: 0;
 		right: 0;
 		height: 5px;
+	}
+	:global(.status) {
+		padding: 10px;
+		border-left: 6px solid;
+	}
+	:global(.status.error) {
+		border-color: #d0021b;
+		background-color: #fbe5e8;
+	}
+	:global(.status.warning) {
+		border-color: #e6a700;
+		background-color: #fff3cd;
+	}
+	:global(.status.ok) {
+		border-color: #0f8243;
+		background-color: #e3f2e9;
+	}
+	.validate-list li {
+		margin-bottom: 6px;
+	}
+	button.link {
+		display: inline;
+		height: auto;
+		margin: 0;
+		padding: 0;
+		border: none;
+		background: none;
+		color: #206095;
+		text-decoration: underline;
+		font: inherit;
+		cursor: pointer;
+	}
+	button.warnings {
+		background-color: #fff3cd;
+	}
+	.notice-detail {
+		font-family: monospace;
 	}
 	.progress-bar {
 		height: 100%;

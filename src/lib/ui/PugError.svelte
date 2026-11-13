@@ -1,18 +1,10 @@
 <script>
-	// Shows an error returned by renderJSON. Pug's errors come in two forms:
-	// - compile errors: "Error: Pug:2:7\n<code frame>\n\nSyntax Error: Unexpected token"
-	// - runtime errors: "TypeError: Cannot read properties of undefined (reading 'x') on line 3"
+	// Shows an error returned by renderJSON (summarised by parsePugError() in utils.js)
+	import { parsePugError } from "../utils.js";
+
 	let { error } = $props();
 
-	function parseError(error) {
-		const compile = error.match(/^\w*Error: Pug:(\d+):(\d+)\n[\s\S]*?\n\n([\s\S]+)$/);
-		if (compile) return { message: compile[3], line: compile[1], column: compile[2] };
-		const runtime = error.match(/^\w*Error: ([\s\S]+?)(?: on line (\d+))?$/);
-		return { message: runtime?.[1] ?? error, line: runtime?.[2] };
-	}
-
-	let { message, line, column } = $derived(parseError(error));
-	let location = $derived(line ? ` (line ${line}${column ? `, column ${column}` : ""})` : "");
+	let { message, location } = $derived(parsePugError(error));
 </script>
 
 <div class="pug-error" role="alert">

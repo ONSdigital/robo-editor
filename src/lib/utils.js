@@ -21,3 +21,16 @@ export function getColKeys(columns) {
 	const row = Object.fromEntries(columns.map((col) => [col, null]));
 	return { id: getCodeKey(row), label: getNameKey(row) };
 }
+
+// Summarise an error returned by renderJSON. Pug's errors come in two forms:
+// - compile errors: "Error: Pug:2:7\n<code frame>\n\nSyntax Error: Unexpected token"
+// - runtime errors: "TypeError: Cannot read properties of undefined (reading 'x') on line 3"
+export function parsePugError(error) {
+	const compile = error.match(/^\w*Error: Pug:(\d+):(\d+)\n[\s\S]*?\n\n([\s\S]+)$/);
+	const runtime = error.match(/^\w*Error: ([\s\S]+?)(?: on line (\d+))?$/);
+	const [message, line, column] = compile
+		? [compile[3], compile[1], compile[2]]
+		: [runtime?.[1] ?? error, runtime?.[2]];
+	const location = line ? ` (line ${line}${column ? `, column ${column}` : ""})` : "";
+	return { message, line, column, location };
+}
